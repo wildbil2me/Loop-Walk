@@ -3,199 +3,260 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Back Again — Loop Walk Generator</title>
+<title>Back Again — A Wayfarer's Round</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,500;0,6..72,600;1,6..72,500&family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=IM+Fell+English:ital@0;1&family=Cinzel+Decorative:wght@700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --paper: #EDE6D6;
-    --paper-dark: #E2D9C4;
-    --ink: #2E3B2F;
-    --ink-soft: #55614F;
-    --blaze: #C1521F;
-    --blaze-dark: #9B3F16;
-    --pine: #3E6B63;
-    --brass: #A98B4E;
-    --line: rgba(46,59,47,0.18);
+    --vellum: #E6D9B8;
+    --vellum-dark: #DACBA4;
+    --vellum-deep: #CDBB8E;
+    --ink: #2A2118;
+    --ink-soft: #5C4B35;
+    --forest: #1E3A2F;
+    --moss: #4A6141;
+    --gold: #A67C1F;
+    --gold-bright: #C69A34;
+    --oxblood: #7A2E28;
+    --rule: rgba(42,33,24,0.22);
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
   body{
     background:
-      repeating-radial-gradient(circle at 20% 15%, transparent 0, transparent 38px, var(--line) 39px, transparent 40px),
-      repeating-radial-gradient(circle at 85% 80%, transparent 0, transparent 52px, var(--line) 53px, transparent 54px),
-      var(--paper);
+      radial-gradient(ellipse at 15% 10%, rgba(122,46,40,0.05), transparent 55%),
+      radial-gradient(ellipse at 85% 85%, rgba(30,58,47,0.06), transparent 55%),
+      repeating-linear-gradient(92deg, transparent 0 3px, rgba(42,33,24,0.014) 3px 4px),
+      var(--vellum);
     color: var(--ink);
-    font-family: 'Public Sans', sans-serif;
+    font-family: 'IM Fell English', Georgia, serif;
     min-height:100vh;
-    padding: 20px 16px 60px;
+    padding: 22px 16px 60px;
   }
   .wrap{ max-width: 480px; margin: 0 auto; }
 
-  header{ margin-bottom: 22px; }
+  header{ margin-bottom: 24px; text-align:center; }
+  .rose{ display:block; margin: 0 auto 8px; }
   .eyebrow{
-    font-family:'JetBrains Mono', monospace;
-    font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
-    color: var(--brass); font-weight: 700;
-    display:flex; align-items:center; gap:8px;
+    font-family:'Cinzel', serif; font-size: 10px; letter-spacing: 0.34em;
+    text-transform: uppercase; color: var(--gold); font-weight: 600;
   }
-  .eyebrow::before{ content:""; width:16px; height:1px; background:var(--brass); display:inline-block; }
   h1{
-    font-family:'Newsreader', serif; font-style: italic; font-weight: 500;
-    font-size: 34px; line-height: 1.05; margin: 6px 0 4px; color: var(--ink);
+    font-family:'Cinzel Decorative', 'Cinzel', serif; font-weight:700;
+    font-size: 33px; line-height: 1.12; margin: 8px 0 2px; color: var(--forest);
   }
-  .sub{ font-size: 13.5px; color: var(--ink-soft); line-height:1.5; max-width: 40ch; }
+  .rule-orn{
+    display:flex; align-items:center; justify-content:center; gap:9px;
+    margin: 10px 0 12px; color: var(--gold);
+  }
+  .rule-orn::before, .rule-orn::after{
+    content:""; height:1px; width:64px; background:linear-gradient(90deg,transparent,var(--gold),transparent);
+  }
+  .rule-orn span{ font-size: 11px; letter-spacing:0.2em; }
+  .sub{
+    font-size: 15px; color: var(--ink-soft); line-height:1.55;
+    max-width: 38ch; margin: 0 auto; font-style: italic;
+  }
 
   .card{
-    background: var(--paper-dark);
-    border: 1px solid var(--line);
-    border-radius: 4px;
-    padding: 18px;
-    margin-bottom: 16px;
+    background: var(--vellum-dark);
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    padding: 20px 18px;
+    margin-bottom: 18px;
     position: relative;
+    box-shadow: 0 1px 0 rgba(255,255,255,0.35) inset;
   }
   .card::before{
-    content:""; position:absolute; top:8px; left:8px; right:8px; bottom:8px;
-    border: 1px dashed var(--line); pointer-events:none; border-radius: 2px;
+    content:""; position:absolute; top:6px; left:6px; right:6px; bottom:6px;
+    border: 1px solid rgba(166,124,31,0.4);
+    pointer-events:none;
+  }
+  .card::after{
+    content:"❖ ❖"; position:absolute; top:-1px; left:0; right:0;
+    text-align:center; font-size:8px; color:var(--gold);
+    letter-spacing:0.6em; line-height:1; transform:translateY(-50%);
+    background:var(--vellum-dark); width:fit-content; margin:0 auto; padding:0 8px;
+  }
+
+  .panel-title{
+    font-family:'Cinzel', serif; font-size:11px; letter-spacing:0.22em;
+    text-transform:uppercase; color:var(--gold); font-weight:600;
+    text-align:center; margin: 2px 0 16px;
   }
 
   .opt-nav{
-    display:flex; align-items:stretch; gap:2px;
-    background: var(--paper);
-    border:1px solid var(--line);
-    border-radius: 3px;
-    padding: 3px;
-    margin-bottom: 14px;
+    display:flex; align-items:stretch; gap:0;
+    border:1px solid var(--rule); background: var(--vellum);
+    margin-bottom: 12px;
   }
   .opt-nav button{
-    flex:1; padding: 7px 4px; border:none; background:transparent;
-    font-family:'JetBrains Mono', monospace; font-size:10px; letter-spacing:0.05em;
-    text-transform:uppercase; font-weight:700; color: var(--ink-soft);
-    border-radius: 2px; cursor:pointer; line-height:1.35;
+    flex:1; padding: 9px 4px; border:none; background:transparent;
+    border-right:1px solid var(--rule);
+    font-family:'Cinzel', serif; font-size:9.5px; letter-spacing:0.14em;
+    text-transform:uppercase; font-weight:600; color: var(--ink-soft);
+    cursor:pointer; line-height:1.4;
   }
+  .opt-nav button:last-child{ border-right:none; }
   .opt-nav button .len{
-    display:block; font-size:12px; letter-spacing:0; margin-top:2px; color:var(--ink);
+    display:block; font-family:'IM Fell English', serif; font-style:italic;
+    font-size:14px; letter-spacing:0; margin-top:3px; color:var(--ink); text-transform:none;
   }
-  .opt-nav button.active{ background: var(--ink); color: var(--paper); }
-  .opt-nav button.active .len{ color: var(--paper); }
-  .opt-nav button:disabled{ opacity:0.35; cursor:default; }
+  .opt-nav button.active{ background: var(--forest); color: var(--vellum); }
+  .opt-nav button.active .len{ color: var(--gold-bright); }
+  .opt-nav button:disabled{ opacity:0.3; cursor:default; }
 
+  .route-name{
+    font-family:'Cinzel Decorative','Cinzel',serif; font-weight:700;
+    font-size: 19px; color: var(--forest); text-align:center;
+    margin: 4px 0 2px; line-height:1.25;
+  }
   .swipe-hint{
-    font-family:'JetBrains Mono', monospace; font-size:10px; letter-spacing:0.08em;
+    font-family:'Cinzel', serif; font-size:9px; letter-spacing:0.16em;
     text-transform:uppercase; color:var(--ink-soft); text-align:center;
-    margin: 0 0 10px; display:flex; align-items:center; justify-content:center; gap:8px;
+    margin: 0 0 12px; display:flex; align-items:center; justify-content:center; gap:10px;
   }
   .arrow-btn{
-    border:1px solid var(--line); background:var(--paper); color:var(--ink);
-    border-radius:3px; width:28px; height:24px; cursor:pointer;
-    font-size:12px; line-height:1; padding:0;
+    border:1px solid var(--rule); background:var(--vellum); color:var(--forest);
+    width:26px; height:22px; cursor:pointer; font-size:12px; line-height:1; padding:0;
+    font-family:'Cinzel',serif;
   }
-  .arrow-btn:disabled{ opacity:0.3; cursor:default; }
+  .arrow-btn:disabled{ opacity:0.25; cursor:default; }
 
   #map{
-    width:100%; height: 300px; border-radius: 4px;
-    border: 1px solid var(--line);
-    filter: sepia(12%) saturate(85%);
+    width:100%; height: 300px;
+    border: 1px solid var(--rule);
+    outline: 3px solid var(--vellum-deep); outline-offset: -4px;
+    filter: sepia(34%) saturate(72%) contrast(96%) brightness(1.02);
     touch-action: pan-y;
   }
 
-  .stat-row{ display:flex; gap:10px; margin-top:14px; }
-  .stat{
-    flex:1; background: var(--paper); border:1px solid var(--line); border-radius:3px;
-    padding: 10px 12px;
+  .stat-row{ display:flex; margin-top:14px; border:1px solid var(--rule); background:var(--vellum); }
+  .stat{ flex:1; padding: 10px 8px; text-align:center; border-right:1px solid var(--rule); }
+  .stat:last-child{ border-right:none; }
+  .stat .k{
+    font-family:'Cinzel', serif; font-size:8.5px; text-transform:uppercase;
+    letter-spacing:0.16em; color:var(--ink-soft);
   }
-  .stat .k{ font-family:'JetBrains Mono', monospace; font-size:9.5px; text-transform:uppercase; letter-spacing:0.1em; color:var(--ink-soft); }
-  .stat .v{ font-family:'JetBrains Mono', monospace; font-size:17px; font-weight:700; color: var(--ink); margin-top:2px; }
-  .stat .v.blaze{ color: var(--blaze-dark); }
+  .stat .v{
+    font-family:'IM Fell English', serif; font-size:19px; color: var(--forest); margin-top:3px;
+  }
+  .stat .v.gold{ color: var(--oxblood); font-size:15px; }
 
   .route-badge{
-    display:inline-flex; align-items:center; gap:6px;
-    font-family:'JetBrains Mono', monospace; font-size:10.5px; letter-spacing:0.08em; text-transform:uppercase;
-    font-weight:700; padding: 4px 9px; border-radius: 2px; margin-bottom: 10px;
+    display:block; text-align:center;
+    font-family:'Cinzel', serif; font-size:9px; letter-spacing:0.18em; text-transform:uppercase;
+    font-weight:600; padding: 5px 9px; margin: 0 0 10px;
+    border-top:1px solid var(--rule); border-bottom:1px solid var(--rule);
   }
-  .route-badge.loop{ background: rgba(62,107,99,0.15); color: var(--pine); }
-  .route-badge.outback{ background: rgba(193,82,31,0.15); color: var(--blaze-dark); }
+  .route-badge.loop{ color: var(--moss); }
+  .route-badge.outback{ color: var(--oxblood); }
 
   .dir-head{
-    font-family:'JetBrains Mono', monospace; font-size:10px; letter-spacing:0.12em;
-    text-transform:uppercase; color:var(--brass); font-weight:700;
-    margin: 18px 0 8px; display:flex; align-items:center; gap:8px;
+    font-family:'Cinzel', serif; font-size:10px; letter-spacing:0.22em;
+    text-transform:uppercase; color:var(--gold); font-weight:600;
+    margin: 20px 0 2px; text-align:center;
   }
-  .dir-head::before{ content:""; width:14px; height:1px; background:var(--brass); }
-
-  .dir-list{ list-style:none; margin:0; padding:0; border-top:1px solid var(--line); }
+  .dir-sub{
+    font-family:'IM Fell English',serif; font-style:italic; font-size:12.5px;
+    color:var(--ink-soft); text-align:center; margin: 0 0 10px;
+  }
+  .dir-list{ list-style:none; margin:0; padding:0; border-top:1px solid var(--rule); }
   .dir-list li{
-    display:flex; gap:10px; align-items:baseline;
-    padding: 9px 2px; border-bottom:1px solid var(--line);
-    font-size:13.5px; line-height:1.4; color:var(--ink);
+    display:flex; gap:12px; align-items:baseline;
+    padding: 10px 2px; border-bottom:1px solid var(--rule);
+    font-size:15px; line-height:1.45; color:var(--ink);
   }
   .dir-list li .n{
-    font-family:'JetBrains Mono', monospace; font-size:10.5px; font-weight:700;
-    color:var(--pine); min-width:20px; flex-shrink:0; padding-top:2px;
+    font-family:'Cinzel', serif; font-size:11px; font-weight:700;
+    color:var(--gold); min-width:22px; flex-shrink:0;
   }
   .dir-list li .d{
-    font-family:'JetBrains Mono', monospace; font-size:10.5px;
-    color:var(--ink-soft); margin-left:auto; flex-shrink:0; padding-left:8px;
+    font-family:'Cinzel', serif; font-size:9.5px; letter-spacing:0.08em;
+    color:var(--ink-soft); margin-left:auto; flex-shrink:0; padding-left:10px;
   }
-  .dir-list li.turnaround{ background: rgba(193,82,31,0.08); }
-  .dir-list li.turnaround .n{ color: var(--blaze-dark); }
+  .dir-list li.turnaround{ background: rgba(122,46,40,0.07); }
+  .dir-list li.turnaround .n{ color: var(--oxblood); }
 
   .mode-toggle{
-    display:flex; gap:2px; background: var(--paper);
-    border:1px solid var(--line); border-radius: 3px; padding: 3px; margin-bottom: 18px;
+    display:flex; border:1px solid var(--rule); background: var(--vellum); margin-bottom: 18px;
   }
   .mode-toggle button{
-    flex:1; padding: 8px 10px; border:none; background:transparent;
-    font-family:'JetBrains Mono', monospace; font-size:11.5px; letter-spacing:0.06em;
-    text-transform:uppercase; font-weight:700; color: var(--ink-soft);
-    border-radius: 2px; cursor:pointer;
+    flex:1; padding: 10px; border:none; background:transparent;
+    border-right:1px solid var(--rule);
+    font-family:'Cinzel', serif; font-size:10px; letter-spacing:0.16em;
+    text-transform:uppercase; font-weight:600; color: var(--ink-soft); cursor:pointer;
   }
-  .mode-toggle button.active{ background: var(--ink); color: var(--paper); }
+  .mode-toggle button:last-child{ border-right:none; }
+  .mode-toggle button.active{ background: var(--forest); color: var(--vellum); }
 
-  .dial-zone{ display:flex; align-items:center; justify-content:center; padding: 8px 0 4px; }
+  .dial-zone{ display:flex; align-items:center; justify-content:center; padding: 6px 0 2px; }
   .dial{
-    position:relative; width:184px; height:184px; border-radius:50%;
+    position:relative; width:190px; height:190px; border-radius:50%;
     background:
-      radial-gradient(circle at center, var(--paper) 0 58%, transparent 58.5%),
-      conic-gradient(var(--brass) 0deg, var(--line) 0deg);
+      radial-gradient(circle at center, var(--vellum) 0 57%, transparent 57.5%),
+      conic-gradient(var(--gold) 0deg, var(--vellum-deep) 0deg);
     display:flex; align-items:center; justify-content:center;
-    border: 1px solid var(--line);
+    border: 1px solid var(--rule);
+    box-shadow: 0 0 0 5px var(--vellum-dark), 0 0 0 6px var(--rule);
+  }
+  .dial::before{
+    content:"N"; position:absolute; top:6px; left:50%; transform:translateX(-50%);
+    font-family:'Cinzel',serif; font-size:8px; letter-spacing:0.1em; color:var(--gold);
   }
   .dial-inner{ text-align:center; }
-  .dial-value{ font-family:'JetBrains Mono', monospace; font-weight:700; font-size: 30px; color: var(--ink); }
+  .dial-value{ font-family:'Cinzel', serif; font-weight:700; font-size: 34px; color: var(--forest); }
   .dial-unit{
-    font-family:'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing:0.1em;
-    text-transform:uppercase; color: var(--ink-soft); margin-top:2px;
+    font-family:'Cinzel', serif; font-size: 9px; letter-spacing:0.2em;
+    text-transform:uppercase; color: var(--ink-soft); margin-top:3px;
   }
-  input[type=range]{ width: 100%; margin-top: 16px; accent-color: var(--blaze); }
+  input[type=range]{ width: 100%; margin-top: 18px; accent-color: var(--oxblood); }
   .range-labels{
     display:flex; justify-content:space-between;
-    font-family:'JetBrains Mono', monospace; font-size:10.5px; color: var(--ink-soft); margin-top:4px;
+    font-family:'Cinzel', serif; font-size:9px; letter-spacing:0.1em;
+    color: var(--ink-soft); margin-top:5px;
   }
 
   .btn-primary{
-    width:100%; padding: 14px; margin-top: 18px;
-    background: var(--blaze); color: var(--paper);
-    border:none; border-radius: 3px;
-    font-family:'Public Sans', sans-serif; font-weight:700; font-size:14.5px;
-    cursor:pointer; letter-spacing:0.01em; transition: background 0.15s ease;
+    width:100%; padding: 15px; margin-top: 20px;
+    background: var(--forest); color: var(--vellum);
+    border:1px solid var(--forest); border-radius: 1px;
+    font-family:'Cinzel', serif; font-weight:600; font-size:12px;
+    letter-spacing:0.2em; text-transform:uppercase;
+    cursor:pointer; transition: background 0.15s ease;
   }
-  .btn-primary:hover{ background: var(--blaze-dark); }
-  .btn-primary:disabled{ background: #B8AF9A; cursor: not-allowed; }
+  .btn-primary:hover{ background: #162A22; }
+  .btn-primary:disabled{ background: var(--vellum-deep); border-color:var(--rule); color:var(--ink-soft); cursor: not-allowed; }
 
   .status{
-    font-family:'JetBrains Mono', monospace; font-size: 12px; color: var(--ink-soft);
-    margin-top: 12px; min-height: 16px; display:flex; align-items:center; gap:7px;
+    font-family:'IM Fell English', serif; font-style:italic; font-size: 14px;
+    color: var(--ink-soft); margin-top: 13px; min-height: 18px;
+    display:flex; align-items:center; gap:8px; justify-content:center; text-align:center;
   }
-  .status .dot{ width:6px; height:6px; border-radius:50%; background: var(--pine); flex-shrink:0; }
-  .status.warn .dot{ background: var(--blaze); }
-  .status.warn{ color: var(--blaze-dark); font-weight:600; }
+  .status .dot{ width:5px; height:5px; border-radius:50%; background: var(--moss); flex-shrink:0; }
+  .status.warn .dot{ background: var(--oxblood); }
+  .status.warn{ color: var(--oxblood); }
+
+  .manual-label{
+    font-family:'Cinzel', serif; font-size:9px; letter-spacing:0.14em;
+    text-transform:uppercase; color:var(--ink-soft); margin-bottom:7px; text-align:center;
+  }
+  #addressInput{
+    flex:1; padding:10px; border:1px solid var(--rule); background:var(--vellum);
+    font-family:'IM Fell English',serif; font-size:15px; color:var(--ink);
+  }
+  #findAddrBtn{
+    padding:10px 15px; border:1px solid var(--rule); background:var(--vellum-deep);
+    color:var(--forest); font-family:'Cinzel',serif; font-weight:600;
+    font-size:9.5px; letter-spacing:0.14em; text-transform:uppercase; cursor:pointer;
+  }
 
   footer{
-    margin-top: 26px; font-family:'JetBrains Mono', monospace; font-size: 10.5px;
-    color: var(--ink-soft); text-align:center; letter-spacing:0.04em;
+    margin-top: 28px; font-family:'Cinzel', serif; font-size: 8.5px;
+    letter-spacing:0.14em; text-transform:uppercase;
+    color: var(--ink-soft); text-align:center; opacity:0.75;
   }
   .hidden{ display:none !important; }
 </style>
@@ -203,47 +264,65 @@
 <body>
 <div class="wrap">
   <header>
-    <div class="eyebrow">Back Again · Prototype</div>
-    <h1>Pick a loop,<br>walk it back to start.</h1>
-    <p class="sub">Set a time or distance below. We'll draw three walking loops from right where you're standing — swipe between them to trade a little more distance for a little less.</p>
+    <svg class="rose" width="46" height="46" viewBox="0 0 46 46" aria-hidden="true">
+      <g fill="none" stroke="#A67C1F" stroke-width="1">
+        <circle cx="23" cy="23" r="17"/>
+        <circle cx="23" cy="23" r="12.5"/>
+      </g>
+      <path d="M23 3 L26 20 L23 23 L20 20 Z" fill="#7A2E28"/>
+      <path d="M23 43 L20 26 L23 23 L26 26 Z" fill="#1E3A2F"/>
+      <path d="M3 23 L20 20 L23 23 L20 26 Z" fill="#1E3A2F"/>
+      <path d="M43 23 L26 26 L23 23 L26 20 Z" fill="#1E3A2F"/>
+      <circle cx="23" cy="23" r="1.8" fill="#A67C1F"/>
+    </svg>
+    <div class="eyebrow">Wayfarer's Almanac</div>
+    <h1>Back Again</h1>
+    <div class="rule-orn"><span>❧</span></div>
+    <p class="sub">Name your hour or your distance. The almanac shall set down three rounds that leave from where you stand — and return you to the selfsame doorstep.</p>
   </header>
 
   <div class="card hidden" id="resultCard">
+    <div class="panel-title">Three Ways Laid Before You</div>
+
     <div class="opt-nav" id="optNav">
-      <button data-idx="0">Shorter<span class="len" data-len>—</span></button>
-      <button data-idx="1" class="active">Middle<span class="len" data-len>—</span></button>
-      <button data-idx="2">Longer<span class="len" data-len>—</span></button>
+      <button data-idx="0">The Short Road<span class="len" data-len>—</span></button>
+      <button data-idx="1" class="active">The Middle Way<span class="len" data-len>—</span></button>
+      <button data-idx="2">The Long Round<span class="len" data-len>—</span></button>
     </div>
 
+    <div class="route-name" id="routeName">—</div>
     <div class="swipe-hint">
       <button class="arrow-btn" id="prevOpt">‹</button>
-      <span id="swipeLabel">Swipe the map to compare</span>
+      <span id="swipeLabel">Draw the map aside to compare</span>
       <button class="arrow-btn" id="nextOpt">›</button>
     </div>
 
-    <span class="route-badge loop hidden" id="badgeLoop">◎ Closed loop</span>
-    <span class="route-badge outback hidden" id="badgeOutback">⇄ There and back — same street, twice</span>
+    <span class="route-badge loop hidden" id="badgeLoop">◈ A Closed Round ◈</span>
+    <span class="route-badge outback hidden" id="badgeOutback">◈ The Doubled Path — one road, walked twice ◈</span>
 
     <div id="map"></div>
 
     <div class="stat-row">
       <div class="stat"><div class="k">Distance</div><div class="v" id="statDist">—</div></div>
-      <div class="stat"><div class="k">Est. time</div><div class="v" id="statTime">—</div></div>
-      <div class="stat"><div class="k">Pace used</div><div class="v blaze" id="statPace">—</div></div>
+      <div class="stat"><div class="k">Time Afoot</div><div class="v" id="statTime">—</div></div>
+      <div class="stat"><div class="k">Your Pace</div><div class="v gold" id="statPace">—</div></div>
     </div>
 
-    <div class="dir-head">Which way to walk it</div>
+    <div class="dir-head">The Wayfinding</div>
+    <div class="dir-sub">Follow it thus, and the road brings you home.</div>
     <ol class="dir-list" id="dirList"></ol>
   </div>
 
   <div class="card">
+    <div class="panel-title">Set Your Measure</div>
+
     <div class="mode-toggle">
-      <button id="modeTime" class="active">By time</button>
-      <button id="modeDist">By distance</button>
+      <button id="modeTime" class="active">By the Hour</button>
+      <button id="modeDist">By the Mile</button>
     </div>
-    <div class="mode-toggle" id="unitToggleRow" style="max-width:140px; margin: 0 auto 14px;">
-      <button id="unitMi" class="active">mi</button>
-      <button id="unitKm">km</button>
+    <div class="mode-toggle" id="unitToggleRow" style="max-width:150px; margin: 0 auto 16px;">
+      <button id="unitMi" class="active">Miles</button>
+      <button id="unitKm">Leagues</button>
     </div>
 
     <div class="dial-zone">
@@ -257,20 +336,19 @@
     <input type="range" id="rangeInput" min="5" max="60" step="5" value="15">
     <div class="range-labels"><span id="rangeMin">5 min</span><span id="rangeMax">60 min</span></div>
 
-    <button class="btn-primary" id="generateBtn">Generate loops from here</button>
-    <div class="status" id="statusLine"><span class="dot"></span><span id="statusText">Waiting to locate you…</span></div>
+    <button class="btn-primary" id="generateBtn">Seek the Rounds</button>
+    <div class="status" id="statusLine"><span class="dot"></span><span id="statusText">Taking your bearings…</span></div>
 
-    <div id="manualLocRow" style="margin-top:12px;">
-      <div style="font-family:'JetBrains Mono', monospace; font-size:10.5px; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:6px;">No GPS? Set a start point manually</div>
-      <div style="display:flex; gap:6px;">
-        <input id="addressInput" type="text" placeholder="Address, city, or landmark"
-          style="flex:1; padding:9px 10px; border:1px solid var(--line); border-radius:3px; background:var(--paper); font-family:'Public Sans',sans-serif; font-size:13px; color:var(--ink);">
-        <button id="findAddrBtn" style="padding:9px 14px; border:none; border-radius:3px; background:var(--pine); color:var(--paper); font-weight:700; font-size:12.5px; cursor:pointer;">Find</button>
+    <div id="manualLocRow" style="margin-top:14px;">
+      <div class="manual-label">Or name the place you stand</div>
+      <div style="display:flex; gap:7px;">
+        <input id="addressInput" type="text" placeholder="A street, a town, a landmark">
+        <button id="findAddrBtn">Mark It</button>
       </div>
     </div>
   </div>
 
-  <footer>GPS tracking: passive · pace profile: default (no walks logged yet)</footer>
+  <footer>Bearings taken quietly · Pace unlearned as yet</footer>
 </div>
 
 <script>
@@ -309,11 +387,21 @@ function on(id, evt, handler){
   catch(err){ console.error(err); }
 }
 
+const NAME_FIRST = ['Elder','Green','Long','Quiet','Hollow','Amber','Grey','Wending','Old','Fair',
+                    'Low','Thistle','Rook','Marsh','Bramble','Copper','Still','Far','Winding','Hearth'];
+const NAME_SECOND = ['Circuit','Round','Wander','Ramble','Turning','Compass','Errand','Meander',
+                     'Perambulation','Passage','Circling','Sojourn'];
+function nameRoute(seedMeters, idx){
+  const a = NAME_FIRST[Math.floor(seedMeters + idx*7) % NAME_FIRST.length];
+  const b = NAME_SECOND[Math.floor(seedMeters/3 + idx*5) % NAME_SECOND.length];
+  return 'The ' + a + ' ' + b;
+}
+
 function updateDialRing(){
   const min = +rangeInput.min, max = +rangeInput.max, val = +rangeInput.value;
   const pct = (val - min) / (max - min);
   const deg = pct * 360;
-  dialRing.style.background = 'radial-gradient(circle at center, var(--paper) 0 58%, transparent 58.5%), conic-gradient(var(--brass) ' + deg + 'deg, var(--line) ' + deg + 'deg)';
+  dialRing.style.background = 'radial-gradient(circle at center, var(--vellum) 0 57%, transparent 57.5%), conic-gradient(var(--gold) ' + deg + 'deg, var(--vellum-deep) ' + deg + 'deg)';
 }
 
 function refreshDialLabels(){
@@ -327,7 +415,7 @@ function refreshDialLabels(){
     rangeInput.min = 0.25; rangeInput.max = 5; rangeInput.step = 0.25;
     if(+rangeInput.value > 5) rangeInput.value = 1;
     dialUnit.textContent = 'miles';
-    rangeMin.textContent = '0.25 mi'; rangeMax.textContent = '5 mi';
+    rangeMin.textContent = '¼ mile'; rangeMax.textContent = '5 miles';
   } else {
     rangeInput.min = 0.5; rangeInput.max = 8; rangeInput.step = 0.5;
     if(+rangeInput.value > 8) rangeInput.value = 2;
@@ -370,21 +458,21 @@ refreshDialLabels();
 
 function locate(){
   if(!navigator.geolocation){
-    setStatus('Geolocation not supported by this browser.', true);
+    setStatus('This glass shows no bearings at all.', true);
     return;
   }
-  setStatus('Locating you…');
+  setStatus('Taking your bearings…');
   const timeoutFallback = setTimeout(function(){
-    if(!userLoc) setStatus('Location permission unavailable — search an address below instead.', true);
+    if(!userLoc) setStatus('No bearings to be had — name your place below.', true);
   }, 6000);
   navigator.geolocation.getCurrentPosition(function(pos){
     clearTimeout(timeoutFallback);
     userLoc = { lat: pos.coords.latitude, lon: pos.coords.longitude };
     lastFixTime = Date.now();
-    setStatus('Located. Ready to generate loops.');
+    setStatus('Bearings taken. The rounds await.');
   }, function(){
     clearTimeout(timeoutFallback);
-    setStatus('Location permission unavailable — search an address below instead.', true);
+    setStatus('No bearings to be had — name your place below.', true);
   }, { enableHighAccuracy: true, timeout: 10000 });
 }
 locate();
@@ -401,14 +489,14 @@ async function geocodeAddress(query){
 on('findAddrBtn','click', async function(){
   const q = document.getElementById('addressInput').value.trim();
   if(!q) return;
-  setStatus('Searching for "'+q+'"…');
+  setStatus('Searching the maps for "'+q+'"…');
   try{
     const loc = await geocodeAddress(q);
     userLoc = { lat: loc.lat, lon: loc.lon };
     lastFixTime = Date.now();
-    setStatus('Start point set. Ready to generate loops.');
+    setStatus('The place is marked. The rounds await.');
   }catch(e){
-    setStatus('Could not find that place — try a more specific address.', true);
+    setStatus('No such place on any chart — try a fuller name.', true);
   }
 });
 
@@ -416,14 +504,14 @@ function startPassiveWatch(){
   if(!navigator.geolocation) return;
   gpsWatchId = navigator.geolocation.watchPosition(function(){
     lastFixTime = Date.now();
-    if(statusLine.classList.contains('warn')) setStatus('GPS signal recovered.');
+    if(statusLine.classList.contains('warn')) setStatus('Your bearings return.');
   }, function(){
-    setStatus('GPS signal lost — pace tracking paused until it returns.', true);
+    setStatus('Bearings lost — the reckoning of your pace rests until they return.', true);
   }, { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 });
 
   setInterval(function(){
     if(lastFixTime && Date.now() - lastFixTime > GPS_STALE_MS){
-      setStatus("GPS signal weak — this walk's data may be low-confidence.", true);
+      setStatus('Bearings grown faint — this walk shall be reckoned lightly.', true);
     }
   }, 5000);
 }
@@ -600,27 +688,27 @@ function describeStep(step, isFirst, isLast){
   const mod = m.modifier || '';
   const road = step.name && step.name.trim() ? step.name.trim() : '';
 
-  if(isLast) return 'Arrive back at your start';
+  if(isLast) return 'And so you come again to your own door';
   if(isFirst){
-    const headings = {north:'north',northeast:'northeast',east:'east',southeast:'southeast',
-      south:'south',southwest:'southwest',west:'west',northwest:'northwest'};
+    const headings = {north:'north',northeast:'north-east',east:'east',southeast:'south-east',
+      south:'south',southwest:'south-west',west:'west',northwest:'north-west'};
     const dir = headings[(mod||'').toLowerCase()] || '';
-    return 'Head ' + (dir ? dir + ' ' : '') + (road ? 'on ' + road : 'out from your start');
+    return 'Set out ' + (dir ? dir + 'ward ' : '') + (road ? 'along ' + road : 'from where you stand');
   }
 
   const turns = {
-    'left':'Turn left','right':'Turn right',
-    'slight left':'Bear left','slight right':'Bear right',
-    'sharp left':'Sharp left','sharp right':'Sharp right',
-    'straight':'Continue straight','uturn':'Turn around'
+    'left':'Bear left','right':'Bear right',
+    'slight left':'Keep a little to the left','slight right':'Keep a little to the right',
+    'sharp left':'Turn sharp left','sharp right':'Turn sharp right',
+    'straight':'Hold straight on','uturn':'Turn about'
   };
 
   let verb;
-  if(type === 'roundabout' || type === 'rotary'){ verb = 'Take the roundabout'; }
-  else if(type === 'fork'){ verb = mod.indexOf('left') >= 0 ? 'Keep left at the fork' : 'Keep right at the fork'; }
-  else if(type === 'new name' || type === 'continue'){ verb = 'Continue'; }
-  else if(type === 'end of road'){ verb = (turns[mod] || 'Turn') + ' at the end of the road'; }
-  else { verb = turns[mod] || 'Continue'; }
+  if(type === 'roundabout' || type === 'rotary'){ verb = 'Round the circle'; }
+  else if(type === 'fork'){ verb = mod.indexOf('left') >= 0 ? 'Take the left hand at the fork' : 'Take the right hand at the fork'; }
+  else if(type === 'new name' || type === 'continue'){ verb = 'Carry on'; }
+  else if(type === 'end of road'){ verb = (turns[mod] || 'Turn') + ' where the road ends'; }
+  else { verb = turns[mod] || 'Carry on'; }
 
   return verb + (road ? ' onto ' + road : '');
 }
@@ -653,7 +741,7 @@ function renderDirections(route, isLoop){
 
   if(!steps.length){
     const li = document.createElement('li');
-    li.innerHTML = '<span class="n">—</span><span>Turn-by-turn steps unavailable for this route. Follow the line on the map.</span>';
+    li.innerHTML = '<span class="n">✦</span><span>No written way for this round — follow the line drawn upon the map.</span>';
     list.appendChild(li);
     return;
   }
@@ -672,8 +760,8 @@ function renderDirections(route, isLoop){
     li.className = 'turnaround';
     li.innerHTML =
       '<span class="n">↩</span>' +
-      "<span>Turn around whenever you're ready and retrace your steps back to the start</span>" +
-      '<span class="d">same again</span>';
+      '<span>Turn about when it suits you, and walk the same road home</span>' +
+      '<span class="d">the same again</span>';
     list.appendChild(li);
   }
 }
@@ -688,8 +776,8 @@ function addDirectionArrows(latlngs){
     const icon = L.divIcon({
       className: '',
       html: '<div style="transform:rotate(' + brg + 'deg);width:18px;height:18px;' +
-            'display:flex;align-items:center;justify-content:center;color:#2E3B2F;' +
-            'font-size:14px;line-height:1;text-shadow:0 0 3px #EDE6D6,0 0 3px #EDE6D6;">\u27A4</div>',
+            'display:flex;align-items:center;justify-content:center;color:#7A2E28;' +
+            'font-size:13px;line-height:1;text-shadow:0 0 3px #E6D9B8,0 0 3px #E6D9B8;">\u27A4</div>',
       iconSize: [18,18], iconAnchor: [9,9]
     });
     markerLayer.push(L.marker(a, { icon: icon, interactive: false }).addTo(map));
@@ -710,15 +798,16 @@ function drawRoute(route, isLoop){
 
   const latlngs = route.geometry.coordinates.map(function(c){ return [c[1], c[0]]; });
   routeLayer = L.polyline(latlngs, {
-    color: isLoop ? '#3E6B63' : '#C1521F',
-    weight: 4, opacity: 0.85,
-    dashArray: isLoop ? null : '8 6'
+    color: isLoop ? '#1E3A2F' : '#7A2E28',
+    weight: 4, opacity: 0.9,
+    dashArray: isLoop ? null : '9 6'
   }).addTo(map);
 
   const startIcon = L.divIcon({
     className: '',
-    html: '<div style="width:14px;height:14px;border-radius:50%;background:#C1521F;border:2px solid #EDE6D6;box-shadow:0 0 0 1px #2E3B2F;"></div>',
-    iconSize:[14,14], iconAnchor:[7,7]
+    html: '<div style="width:15px;height:15px;transform:rotate(45deg);background:#A67C1F;' +
+          'border:2px solid #E6D9B8;box-shadow:0 0 0 1px #2A2118;"></div>',
+    iconSize:[15,15], iconAnchor:[7.5,7.5]
   });
   markerLayer.push(L.marker([userLoc.lat, userLoc.lon], {icon:startIcon}).addTo(map));
 
@@ -733,9 +822,9 @@ function fmtDist(m){
 }
 
 function labelForIndex(i, total){
-  if(total === 1) return 'Only option';
-  if(total === 2) return i === 0 ? 'Shorter' : 'Longer';
-  return ['Shorter','Middle','Longer'][i];
+  if(total === 1) return 'The Only Road';
+  if(total === 2) return i === 0 ? 'The Short Road' : 'The Long Round';
+  return ['The Short Road','The Middle Way','The Long Round'][i];
 }
 
 function showOption(i){
@@ -750,6 +839,7 @@ function showOption(i){
 
   document.getElementById('badgeLoop').classList.toggle('hidden', !opt.isLoop);
   document.getElementById('badgeOutback').classList.toggle('hidden', opt.isLoop);
+  document.getElementById('routeName').textContent = opt.name;
 
   drawRoute(opt.route, opt.isLoop);
   renderDirections(opt.route, opt.isLoop);
@@ -758,12 +848,12 @@ function showOption(i){
   document.getElementById('statDist').textContent = fmtDist(opt.route.distance);
   document.getElementById('statTime').textContent = Math.round(estMinutes) + ' min';
   const paceDisplay = unit === 'mi' ? (paceMinPerKm / MI_PER_KM) : paceMinPerKm;
-  document.getElementById('statPace').textContent = paceDisplay.toFixed(1) + ' min/' + unit + ' (default)';
+  document.getElementById('statPace').textContent = paceDisplay.toFixed(1) + ' min/' + unit;
 
   document.getElementById('prevOpt').disabled = (activeOption === 0);
   document.getElementById('nextOpt').disabled = (activeOption === routeOptions.length-1);
   document.getElementById('swipeLabel').textContent =
-    'Option ' + (activeOption+1) + ' of ' + routeOptions.length + ' · ' + labelForIndex(activeOption, routeOptions.length);
+    'The ' + ['first','second','third'][activeOption] + ' of ' + routeOptions.length;
 }
 
 function renderOptionNav(){
@@ -815,12 +905,12 @@ function attachSwipe(){
 
 async function handleGenerate(){
   if(!userLoc){
-    setStatus('Still waiting on your location — try again in a moment.', true);
+    setStatus('Your bearings are not yet taken — a moment more.', true);
     locate();
     return;
   }
   generateBtn.disabled = true;
-  setStatus('Finding loop options…');
+  setStatus('Casting about for likely rounds…');
 
   let targetDistM;
   if(mode === 'distance'){
@@ -835,21 +925,23 @@ async function handleGenerate(){
 
   routeOptions = [];
   if(picked.length){
-    picked.forEach(function(r){ routeOptions.push({ route: r, isLoop: true }); });
+    picked.forEach(function(r, i){
+      routeOptions.push({ route: r, isLoop: true, name: nameRoute(Math.round(r.distance), i) });
+    });
     setStatus(picked.length === 1
-      ? 'Found one loop nearby.'
-      : 'Found ' + picked.length + ' loops — swipe to compare.');
+      ? 'One round found in these parts.'
+      : picked.length + ' rounds set down. Choose as you please.');
   } else {
     if(result.failures > 0){
-      setStatus('Routing service dropped ' + result.failures + ' request(s) — using out-and-back.', true);
+      setStatus('The maps came back torn — a doubled path instead.', true);
     } else {
-      setStatus('No clean loop nearby — falling back to out-and-back.');
+      setStatus('No true round hereabouts — a doubled path instead.');
     }
     try{
       const ob = await generateOutAndBack(targetDistM);
-      routeOptions.push({ route: ob, isLoop: false });
+      routeOptions.push({ route: ob, isLoop: false, name: 'The Doubled Path' });
     }catch(e){
-      setStatus('Routing service unavailable right now. Try again shortly.', true);
+      setStatus('The maps are shut to us just now. Try again shortly.', true);
       generateBtn.disabled = false;
       return;
     }
