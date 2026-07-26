@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Trailhead — Loop Walk Generator</title>
+<title>Back Again — Loop Walk Generator</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -169,13 +169,40 @@
     margin-top: 26px; font-family:'JetBrains Mono', monospace; font-size: 10.5px;
     color: var(--ink-soft); text-align:center; letter-spacing:0.04em;
   }
+  .dir-head{
+    font-family:'JetBrains Mono', monospace; font-size:10px; letter-spacing:0.12em;
+    text-transform:uppercase; color:var(--brass); font-weight:700;
+    margin: 18px 0 8px; display:flex; align-items:center; gap:8px;
+  }
+  .dir-head::before{ content:""; width:14px; height:1px; background:var(--brass); }
+
+  .dir-list{
+    list-style:none; margin:0; padding:0;
+    border-top:1px solid var(--line);
+  }
+  .dir-list li{
+    display:flex; gap:10px; align-items:baseline;
+    padding: 9px 2px; border-bottom:1px solid var(--line);
+    font-size:13.5px; line-height:1.4; color:var(--ink);
+  }
+  .dir-list li .n{
+    font-family:'JetBrains Mono', monospace; font-size:10.5px; font-weight:700;
+    color:var(--pine); min-width:20px; flex-shrink:0; padding-top:2px;
+  }
+  .dir-list li .d{
+    font-family:'JetBrains Mono', monospace; font-size:10.5px;
+    color:var(--ink-soft); margin-left:auto; flex-shrink:0; padding-left:8px;
+  }
+  .dir-list li.turnaround{ background: rgba(193,82,31,0.08); }
+  .dir-list li.turnaround .n{ color: var(--blaze-dark); }
+
   .hidden{ display:none !important; }
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
-    <div class="eyebrow">Trailhead · Prototype</div>
+    <div class="eyebrow">Back Again · Prototype</div>
     <h1>Pick a loop,<br>walk it back to start.</h1>
     <p class="sub">Set a time or distance. We'll draw a walking loop from right where you're standing — or an out-and-back if the streets won't cooperate.</p>
   </header>
@@ -223,6 +250,9 @@
       <div class="stat"><div class="k">Est. time</div><div class="v" id="statTime">—</div></div>
       <div class="stat"><div class="k">Pace used</div><div class="v blaze" id="statPace">—</div></div>
     </div>
+
+    <div class="dir-head">Which way to walk it</div>
+    <ol class="dir-list" id="dirList"></ol>
   </div>
 
   <footer>GPS tracking: passive · pace profile: default (no walks logged yet)</footer>
@@ -394,12 +424,20 @@ function destPoint(lat, lon, bearingDeg, distM){
 
 async function osrmRoute(coords){
   const coordStr = coords.map(c => `${c.lon},${c.lat}`).join(';');
-  const url = `https://router.project-osrm.org/route/v1/foot/${coordStr}?overview=full&geometries=geojson`;
+  const url = `https://router.project-osrm.org/route/v1/foot/${coordStr}?overview=full&geometries=geojson&steps=true`;
   const res = await fetch(url);
   if(!res.ok) throw new Error('routing service error');
   const data = await res.json();
   if(!data.routes || !data.routes.length) throw new Error('no route found');
   return data.routes[0];
+}
+
+function bearingBetween(lat1, lon1, lat2, lon2){
+  const la1 = lat1*Math.PI/180, la2 = lat2*Math.PI/180;
+  const dLon = (lon2 - lon1)*Math.PI/180;
+  const y = Math.sin(dLon)*Math.cos(la2);
+  const x = Math.cos(la1)*Math.sin(la2) - Math.sin(la1)*Math.cos(la2)*Math.cos(dLon);
+  return (Math.atan2(y, x)*180/Math.PI + 360) % 360;
 }
 
 function distanceMeters(lat1, lon1, lat2, lon2){
@@ -512,11 +550,133 @@ async function generateOutAndBack(targetDistM){
   return {
     distance: route.distance * 2,
     duration: route.duration * 2,
+    legs: route.legs,
     geometry: {
       type: 'LineString',
       coordinates: outCoords.concat(returnCoords)
     }
   };
+}
+
+// ---------- turn-by-turn directions ----------
+function describeStep(step, isFirst, isLast){
+  const m = step.maneuver || {};
+  const type = m.type || '';
+  const mod = m.modifier || '';
+  const road = step.name && step.name.trim() ? step.name.trim() : '';
+
+  if(isLast) return 'Arrive back at your start';
+  if(isFirst){
+    const headings = {
+      'north':'north','northeast':'northeast','east':'east','southeast':'southeast',
+      'south':'south','southwest':'southwest','west':'west','northwest':'northwest'
+    };
+    const dir = headings[(m.modifier||'').toLowerCase()] || '';
+    return 'Head ' + (dir ? dir + ' ' : '') + (road ? 'on ' + road : 'out from your start');
+  }
+
+  const turns = {
+    'left':'Turn left', 'right':'Turn right',
+    'slight left':'Bear left', 'slight right':'Bear right',
+    'sharp left':'Sharp left', 'sharp right':'Sharp right',
+    'straight':'Continue straight', 'uturn':'Turn around'
+  };
+
+  let verb;
+  if(type === 'roundabout' || type === 'rotary'){
+    verb = 'Take the roundabout';
+  } else if(type === 'fork'){
+    verb = mod.indexOf('left') >= 0 ? 'Keep left at the fork' : 'Keep right at the fork';
+  } else if(type === 'new name' || type === 'continue'){
+    verb = 'Continue';
+  } else if(type === 'end of road'){
+    verb = turns[mod] || 'Turn';
+    verb += ' at the end of the road';
+  } else {
+    verb = turns[mod] || 'Continue';
+  }
+
+  return verb + (road ? ' onto ' + road : '');
+}
+
+function buildDirections(route, isLoop){
+  const steps = [];
+  if(route.legs){
+    route.legs.forEach(leg => {
+      (leg.steps || []).forEach(st => steps.push(st));
+    });
+  }
+
+  const out = [];
+  steps.forEach((st, i) => {
+    const isFirst = out.length === 0;
+    const isLast = !isLoop ? false : (i === steps.length - 1);
+    const text = describeStep(st, isFirst, isLast);
+    const dist = st.distance || 0;
+    const prev = out[out.length - 1];
+    if(prev && prev.text === text){
+      prev.dist += dist;
+    } else {
+      out.push({ text: text, dist: dist });
+    }
+  });
+  return out;
+}
+
+function renderDirections(route, isLoop, turnaroundIndex){
+  const list = document.getElementById('dirList');
+  list.innerHTML = '';
+  let steps = buildDirections(route, isLoop);
+
+  steps = steps.filter((s, i) => i === 0 || i === steps.length-1 || s.dist >= 20);
+
+  if(!steps.length){
+    const li = document.createElement('li');
+    li.innerHTML = '<span class="n">—</span><span>Turn-by-turn steps unavailable for this route. Follow the line on the map.</span>';
+    list.appendChild(li);
+    return;
+  }
+
+  steps.forEach((s, i) => {
+    const li = document.createElement('li');
+    const isTurnaround = (turnaroundIndex !== null && i === turnaroundIndex);
+    if(isTurnaround) li.className = 'turnaround';
+    li.innerHTML =
+      '<span class="n">' + (i+1) + '</span>' +
+      '<span>' + s.text + '</span>' +
+      '<span class="d">' + fmtDist(s.dist) + '</span>';
+    list.appendChild(li);
+  });
+
+  if(!isLoop){
+    const li = document.createElement('li');
+    li.className = 'turnaround';
+    li.innerHTML =
+      '<span class="n">↩</span>' +
+      '<span>Turn around whenever you\'re ready and retrace your steps back to the start</span>' +
+      '<span class="d">same again</span>';
+    list.appendChild(li);
+  }
+}
+
+function addDirectionArrows(latlngs){
+  const arrowCount = Math.min(7, Math.max(3, Math.floor(latlngs.length / 12)));
+  const stride = Math.floor(latlngs.length / (arrowCount + 1));
+  if(stride < 1) return;
+
+  for(let i = stride; i < latlngs.length - 1; i += stride){
+    const a = latlngs[i], b = latlngs[Math.min(i+1, latlngs.length-1)];
+    const brg = bearingBetween(a[0], a[1], b[0], b[1]);
+    const icon = L.divIcon({
+      className: '',
+      html: '<div style="transform:rotate(' + brg + 'deg);width:18px;height:18px;' +
+            'display:flex;align-items:center;justify-content:center;' +
+            'color:#2E3B2F;font-size:14px;line-height:1;' +
+            'text-shadow:0 0 3px #EDE6D6,0 0 3px #EDE6D6;">\u27A4</div>',
+      iconSize: [18,18], iconAnchor: [9,9]
+    });
+    markerLayer.push(L.marker(a, { icon: icon, interactive: false }).addTo(map));
+  }
 }
 
 function drawRoute(route, isLoop){
@@ -545,6 +705,8 @@ function drawRoute(route, isLoop){
     iconSize:[14,14], iconAnchor:[7,7]
   });
   markerLayer.push(L.marker([userLoc.lat, userLoc.lon], {icon:startIcon}).addTo(map));
+
+  addDirectionArrows(latlngs);
 
   map.fitBounds(routeLayer.getBounds(), { padding: [24,24] });
 }
@@ -606,6 +768,7 @@ async function handleGenerate(){
   document.getElementById('badgeLoop').classList.toggle('hidden', !isLoop);
   document.getElementById('badgeOutback').classList.toggle('hidden', isLoop);
   drawRoute(route, isLoop);
+  renderDirections(route, isLoop, null);
 
   const estMinutes = route.distance/1000 * paceMinPerKm;
   document.getElementById('statDist').textContent = fmtDist(route.distance);
