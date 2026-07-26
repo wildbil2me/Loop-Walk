@@ -412,20 +412,42 @@ function bearingBetween(a, b){
   return (Math.atan2(y, x)*180/Math.PI + 360) % 360;
 }
 
+function distanceMeters(lat1, lon1, lat2, lon2){
+  const dLat = (lat2-lat1)*Math.PI/180, dLon = (lon2-lon1)*Math.PI/180;
+  const la1 = lat1*Math.PI/180, la2 = lat2*Math.PI/180;
+  const h = Math.sin(dLat/2)**2 + Math.cos(la1)*Math.cos(la2)*Math.sin(dLon/2)**2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+
 function looksLikeBacktrack(routeCoords){
-  if(routeCoords.length < 6) return true;
+  if(routeCoords.length < 8) return true;
   const n = routeCoords.length;
-  const startSeg = [routeCoords[0], routeCoords[Math.min(4,n-1)]];
-  const endSeg = [routeCoords[n-Math.min(5,n)], routeCoords[n-1]];
-  const bOut = bearingBetween({lat:startSeg[0][1],lon:startSeg[0][0]}, {lat:startSeg[1][1],lon:startSeg[1][0]});
-  const bIn = bearingBetween({lat:endSeg[0][1],lon:endSeg[0][0]}, {lat:endSeg[1][1],lon:endSeg[1][0]});
-  const diff = Math.abs(((bOut - bIn + 540) % 360) - 180);
-  return diff < 25;
+  const mid = Math.floor(n/2);
+  const firstHalf = routeCoords.slice(0, mid);
+  const secondHalf = routeCoords.slice(mid);
+
+  const maxSamples = 40;
+  const stepA = Math.max(1, Math.floor(firstHalf.length / maxSamples));
+  const stepB = Math.max(1, Math.floor(secondHalf.length / maxSamples));
+
+  let overlapCount = 0, sampled = 0;
+  for(let i=0; i<firstHalf.length; i+=stepA){
+    sampled++;
+    const [lon1, lat1] = firstHalf[i];
+    let minDist = Infinity;
+    for(let j=0; j<secondHalf.length; j+=stepB){
+      const [lon2, lat2] = secondHalf[j];
+      const d = distanceMeters(lat1, lon1, lat2, lon2);
+      if(d < minDist) minDist = d;
+    }
+    if(minDist < 20) overlapCount++;
+  }
+  const overlapFraction = sampled > 0 ? overlapCount / sampled : 1;
+  return overlapFraction > 0.45;
 }
 
 // ---------- loop generation ----------
 async function tryGenerateLoop(targetDistM){
-  // Loop shape is the priority — time/distance are a rough target, not a strict filter.
   const radiusMultipliers = [1.0, 0.85, 0.7, 0.55, 0.4];
   const bearingsPerRadius = 3;
   let best = null;
