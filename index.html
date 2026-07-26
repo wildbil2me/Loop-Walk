@@ -423,29 +423,47 @@ function looksLikeBacktrack(routeCoords){
   return diff < 25;
 }
 
+// ---------- loop generation ----------
 async function tryGenerateLoop(targetDistM){
-  const attempts = 5;
-  const baseBearing = Math.random()*360;
-  for(let i=0; i<attempts; i++){
-    const radius = targetDistM / (2*Math.PI) * 1.05;
-    const spread = 25;
-    const b1 = (baseBearing + i*35 + (Math.random()*spread - spread/2)) % 360;
-    const b2 = (b1 + 120 + (Math.random()*spread - spread/2)) % 360;
-    const b3 = (b2 + 120 + (Math.random()*spread - spread/2)) % 360;
+  // Loop shape is the priority — time/distance are a rough target, not a strict filter.
+  const radiusMultipliers = [1.0, 0.85, 0.7, 0.55, 0.4];
+  const bearingsPerRadius = 3;
+  let best = null;
+  let bestDiff = Infinity;
 
-    const p1 = destPoint(userLoc.lat, userLoc.lon, b1, radius);
-    const p2 = destPoint(userLoc.lat, userLoc.lon, b2, radius);
-    const p3 = destPoint(userLoc.lat, userLoc.lon, b3, radius);
+  for(const rMult of radiusMultipliers){
+    const radius = (targetDistM / (2*Math.PI)) * 1.05 * rMult;
+    const baseBearing = Math.random()*360;
 
-    try{
-      const route = await osrmRoute([userLoc, p1, p2, p3, userLoc]);
-      const ratio = route.distance / targetDistM;
-      if(ratio > 0.7 && ratio < 1.6 && !looksLikeBacktrack(route.geometry.coordinates)){
-        return route;
-      }
-    }catch(e){ /* try next attempt */ }
+    for(let i=0; i<bearingsPerRadius; i++){
+      const spread = 25;
+      const b1 = (baseBearing + i*(360/bearingsPerRadius) + (Math.random()*spread - spread/2)) % 360;
+      const b2 = (b1 + 120 + (Math.random()*spread - spread/2)) % 360;
+      const b3 = (b2 + 120 + (Math.random()*spread - spread/2)) % 360;
+
+      const p1 = destPoint(userLoc.lat, userLoc.lon, b1, radius);
+      const p2 = destPoint(userLoc.lat, userLoc.lon, b2, radius);
+      const p3 = destPoint(userLoc.lat, userLoc.lon, b3, radius);
+
+      try{
+        const route = await osrmRoute([userLoc, p1, p2, p3, userLoc]);
+        if(looksLikeBacktrack(route.geometry.coordinates)) continue;
+
+        const diff = route.distance <= targetDistM
+          ? (targetDistM - route.distance)
+          : (route.distance - targetDistM) * 1.4;
+
+        if(diff < bestDiff){
+          bestDiff = diff;
+          best = route;
+        }
+        if(route.distance <= targetDistM * 1.15 && route.distance >= targetDistM * 0.5){
+          return best;
+        }
+      }catch(e){ /* try next attempt */ }
+    }
   }
-  return null;
+  return best;
 }
 
 async function generateOutAndBack(targetDistM){
@@ -542,7 +560,12 @@ async function handleGenerate(){
       return;
     }
   } else {
-    setStatus('Loop generated.');
+    const diffPct = Math.abs(route.distance - targetDistM) / targetDistM;
+    if(diffPct > 0.15){
+      setStatus('Closest loop nearby — a bit ' + (route.distance < targetDistM ? 'shorter' : 'longer') + ' than requested.');
+    } else {
+      setStatus('Loop generated.');
+    }
   }
 
   document.getElementById('resultCard').classList.remove('hidden');
