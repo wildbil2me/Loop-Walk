@@ -26,4 +26,596 @@
     background:
       repeating-radial-gradient(circle at 20% 15%, transparent 0, transparent 38px, var(--line) 39px, transparent 40px),
       repeating-radial-gradient(circle at 85% 80%, transparent 0, transparent 52px, var(--line) 53px, transparent 54px),
-      var(--pa
+      var(--paper);
+    color: var(--ink);
+    font-family: 'Public Sans', sans-serif;
+    min-height:100vh;
+    padding: 20px 16px 60px;
+  }
+  .wrap{ max-width: 480px; margin: 0 auto; }
+
+  header{ margin-bottom: 22px; }
+  .eyebrow{
+    font-family:'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--brass);
+    font-weight: 700;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .eyebrow::before{
+    content:"";
+    width:16px; height:1px; background:var(--brass);
+    display:inline-block;
+  }
+  h1{
+    font-family:'Newsreader', serif;
+    font-style: italic;
+    font-weight: 500;
+    font-size: 34px;
+    line-height: 1.05;
+    margin: 6px 0 4px;
+    color: var(--ink);
+  }
+  .sub{
+    font-size: 13.5px;
+    color: var(--ink-soft);
+    line-height:1.5;
+    max-width: 40ch;
+  }
+
+  .card{
+    background: var(--paper-dark);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 18px;
+    margin-bottom: 16px;
+    position: relative;
+  }
+  .card::before{
+    content:"";
+    position:absolute; top:8px; left:8px; right:8px; bottom:8px;
+    border: 1px dashed var(--line);
+    pointer-events:none;
+    border-radius: 2px;
+  }
+
+  .mode-toggle{
+    display:flex; gap:2px;
+    background: var(--paper);
+    border:1px solid var(--line);
+    border-radius: 3px;
+    padding: 3px;
+    margin-bottom: 18px;
+  }
+  .mode-toggle button{
+    flex:1; padding: 8px 10px; border:none; background:transparent;
+    font-family:'JetBrains Mono', monospace; font-size:11.5px; letter-spacing:0.06em;
+    text-transform:uppercase; font-weight:700; color: var(--ink-soft);
+    border-radius: 2px; cursor:pointer;
+  }
+  .mode-toggle button.active{ background: var(--ink); color: var(--paper); }
+
+  .dial-zone{ display:flex; align-items:center; justify-content:center; padding: 8px 0 4px; }
+  .dial{
+    position:relative; width:184px; height:184px; border-radius:50%;
+    background:
+      radial-gradient(circle at center, var(--paper) 0 58%, transparent 58.5%),
+      conic-gradient(var(--brass) 0deg, var(--line) 0deg);
+    display:flex; align-items:center; justify-content:center;
+    border: 1px solid var(--line);
+  }
+  .dial-inner{ text-align:center; }
+  .dial-value{
+    font-family:'JetBrains Mono', monospace; font-weight:700; font-size: 30px; color: var(--ink);
+  }
+  .dial-unit{
+    font-family:'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing:0.1em; text-transform:uppercase;
+    color: var(--ink-soft); margin-top:2px;
+  }
+  input[type=range]{
+    width: 100%; margin-top: 16px; accent-color: var(--blaze);
+  }
+  .range-labels{ display:flex; justify-content:space-between; font-family:'JetBrains Mono', monospace; font-size:10.5px; color: var(--ink-soft); margin-top:4px; }
+
+  .btn-primary{
+    width:100%; padding: 14px; margin-top: 18px;
+    background: var(--blaze); color: var(--paper);
+    border:none; border-radius: 3px;
+    font-family:'Public Sans', sans-serif; font-weight:700; font-size:14.5px;
+    cursor:pointer; letter-spacing:0.01em;
+    transition: background 0.15s ease;
+  }
+  .btn-primary:hover{ background: var(--blaze-dark); }
+  .btn-primary:disabled{ background: #B8AF9A; cursor: not-allowed; }
+
+  .status{
+    font-family:'JetBrains Mono', monospace; font-size: 12px; color: var(--ink-soft);
+    margin-top: 12px; min-height: 16px; display:flex; align-items:center; gap:7px;
+  }
+  .status .dot{
+    width:6px; height:6px; border-radius:50%; background: var(--pine); flex-shrink:0;
+  }
+  .status.warn .dot{ background: var(--blaze); }
+  .status.warn{ color: var(--blaze-dark); font-weight:600; }
+
+  #map{
+    width:100%; height: 320px; border-radius: 4px; margin-top: 4px;
+    border: 1px solid var(--line);
+    filter: sepia(12%) saturate(85%);
+  }
+
+  .stat-row{ display:flex; gap:10px; margin-top:14px; }
+  .stat{
+    flex:1; background: var(--paper); border:1px solid var(--line); border-radius:3px;
+    padding: 10px 12px;
+  }
+  .stat .k{ font-family:'JetBrains Mono', monospace; font-size:9.5px; text-transform:uppercase; letter-spacing:0.1em; color:var(--ink-soft); }
+  .stat .v{ font-family:'JetBrains Mono', monospace; font-size:17px; font-weight:700; color: var(--ink); margin-top:2px; }
+  .stat .v.blaze{ color: var(--blaze-dark); }
+
+  .route-badge{
+    display:inline-flex; align-items:center; gap:6px;
+    font-family:'JetBrains Mono', monospace; font-size:10.5px; letter-spacing:0.08em; text-transform:uppercase;
+    font-weight:700; padding: 4px 9px; border-radius: 2px; margin-bottom: 10px;
+  }
+  .route-badge.loop{ background: rgba(62,107,99,0.15); color: var(--pine); }
+  .route-badge.outback{ background: rgba(193,82,31,0.15); color: var(--blaze-dark); }
+
+  footer{
+    margin-top: 26px; font-family:'JetBrains Mono', monospace; font-size: 10.5px;
+    color: var(--ink-soft); text-align:center; letter-spacing:0.04em;
+  }
+  .hidden{ display:none !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Trailhead · Prototype</div>
+    <h1>Pick a loop,<br>walk it back to start.</h1>
+    <p class="sub">Set a time or distance. We'll draw a walking loop from right where you're standing — or an out-and-back if the streets won't cooperate.</p>
+  </header>
+
+  <div class="card">
+    <div class="mode-toggle">
+      <button id="modeTime" class="active">By time</button>
+      <button id="modeDist">By distance</button>
+    </div>
+    <div class="mode-toggle" id="unitToggleRow" style="max-width:140px; margin: 0 auto 14px;">
+      <button id="unitMi" class="active">mi</button>
+      <button id="unitKm">km</button>
+    </div>
+
+    <div class="dial-zone">
+      <div class="dial" id="dialRing">
+        <div class="dial-inner">
+          <div class="dial-value" id="dialValue">15</div>
+          <div class="dial-unit" id="dialUnit">minutes</div>
+        </div>
+      </div>
+    </div>
+    <input type="range" id="rangeInput" min="5" max="60" step="5" value="15">
+    <div class="range-labels"><span id="rangeMin">5 min</span><span id="rangeMax">60 min</span></div>
+
+    <button class="btn-primary" id="generateBtn">Generate loop from here</button>
+    <div class="status" id="statusLine"><span class="dot"></span><span id="statusText">Waiting to locate you…</span></div>
+
+    <div id="manualLocRow" style="margin-top:12px;">
+      <div style="font-family:'JetBrains Mono', monospace; font-size:10.5px; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:6px;">No GPS in this preview? Set a start point manually</div>
+      <div style="display:flex; gap:6px;">
+        <input id="addressInput" type="text" placeholder="Address, city, or landmark"
+          style="flex:1; padding:9px 10px; border:1px solid var(--line); border-radius:3px; background:var(--paper); font-family:'Public Sans',sans-serif; font-size:13px; color:var(--ink);">
+        <button id="findAddrBtn" style="padding:9px 14px; border:none; border-radius:3px; background:var(--pine); color:var(--paper); font-weight:700; font-size:12.5px; cursor:pointer;">Find</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card hidden" id="resultCard">
+    <span class="route-badge loop hidden" id="badgeLoop">◎ Closed loop</span>
+    <span class="route-badge outback hidden" id="badgeOutback">⇄ There and back — same street, twice</span>
+    <div id="map"></div>
+    <div class="stat-row">
+      <div class="stat"><div class="k">Distance</div><div class="v" id="statDist">—</div></div>
+      <div class="stat"><div class="k">Est. time</div><div class="v" id="statTime">—</div></div>
+      <div class="stat"><div class="k">Pace used</div><div class="v blaze" id="statPace">—</div></div>
+    </div>
+  </div>
+
+  <footer>GPS tracking: passive · pace profile: default (no walks logged yet)</footer>
+</div>
+
+<script>
+// ---------- state ----------
+let mode = 'time'; // 'time' | 'distance'
+let unit = 'mi'; // 'mi' | 'km'
+const MI_PER_KM = 0.621371;
+let userLoc = null;
+let map = null, routeLayer = null, markerLayer = null;
+let paceMinPerKm = 12; // default walking pace assumption (~5 km/h), will personalize after real walks are logged
+let gpsWatchId = null;
+let lastFixTime = null;
+const GPS_STALE_MS = 20000;
+
+const rangeInput = document.getElementById('rangeInput');
+const dialValue = document.getElementById('dialValue');
+const dialUnit = document.getElementById('dialUnit');
+const dialRing = document.getElementById('dialRing');
+const rangeMin = document.getElementById('rangeMin');
+const rangeMax = document.getElementById('rangeMax');
+const statusLine = document.getElementById('statusLine');
+const statusText = document.getElementById('statusText');
+const generateBtn = document.getElementById('generateBtn');
+
+function setStatus(msg, warn){
+  statusText.textContent = msg;
+  statusLine.classList.toggle('warn', !!warn);
+}
+
+function updateDialRing(){
+  const min = +rangeInput.min, max = +rangeInput.max, val = +rangeInput.value;
+  const pct = (val - min) / (max - min);
+  const deg = pct * 360;
+  dialRing.style.background = `radial-gradient(circle at center, var(--paper) 0 58%, transparent 58.5%), conic-gradient(var(--brass) ${deg}deg, var(--line) ${deg}deg)`;
+}
+
+function refreshDialLabels(){
+  document.getElementById('unitToggleRow').classList.toggle('hidden', mode !== 'distance');
+  if(mode === 'time'){
+    rangeInput.min = 5; rangeInput.max = 60; rangeInput.step = 5;
+    if(+rangeInput.value < 5 || +rangeInput.value > 60) rangeInput.value = 15;
+    dialUnit.textContent = 'minutes';
+    rangeMin.textContent = '5 min'; rangeMax.textContent = '60 min';
+  } else if(unit === 'mi'){
+    rangeInput.min = 0.25; rangeInput.max = 5; rangeInput.step = 0.25;
+    if(+rangeInput.value > 5) rangeInput.value = 1;
+    dialUnit.textContent = 'miles';
+    rangeMin.textContent = '0.25 mi'; rangeMax.textContent = '5 mi';
+  } else {
+    rangeInput.min = 0.5; rangeInput.max = 8; rangeInput.step = 0.5;
+    if(+rangeInput.value > 8) rangeInput.value = 2;
+    dialUnit.textContent = 'km';
+    rangeMin.textContent = '0.5 km'; rangeMax.textContent = '8 km';
+  }
+  dialValue.textContent = rangeInput.value;
+  updateDialRing();
+}
+
+function on(id, evt, handler){
+  var el = document.getElementById(id);
+  if(!el){ console.error("Missing element:", id); return; }
+  try{ el.addEventListener(evt, function(e){ try{ handler(e); }catch(err){ console.error(err); } }); }
+  catch(err){ console.error(err); }
+}
+
+on('unitMi', 'click', function(){
+  unit = 'mi';
+  document.getElementById('unitMi').classList.add('active');
+  document.getElementById('unitKm').classList.remove('active');
+  refreshDialLabels();
+});
+on('unitKm', 'click', function(){
+  unit = 'km';
+  document.getElementById('unitKm').classList.add('active');
+  document.getElementById('unitMi').classList.remove('active');
+  refreshDialLabels();
+});
+
+on('modeTime', 'click', function(){
+  mode = 'time';
+  document.getElementById('modeTime').classList.add('active');
+  document.getElementById('modeDist').classList.remove('active');
+  refreshDialLabels();
+});
+on('modeDist', 'click', function(){
+  mode = 'distance';
+  document.getElementById('modeDist').classList.add('active');
+  document.getElementById('modeTime').classList.remove('active');
+  refreshDialLabels();
+});
+on('rangeInput', 'input', function(){
+  dialValue.textContent = rangeInput.value;
+  updateDialRing();
+});
+refreshDialLabels();
+
+// ---------- geolocation ----------
+function locate(){
+  if(!navigator.geolocation){
+    setStatus('Geolocation not supported by this browser.', true);
+    return;
+  }
+  setStatus('Locating you…');
+  const timeoutFallback = setTimeout(() => {
+    if(!userLoc) setStatus('Location permission unavailable in this preview — search an address below instead.', true);
+  }, 6000);
+  navigator.geolocation.getCurrentPosition(pos => {
+    clearTimeout(timeoutFallback);
+    userLoc = { lat: pos.coords.latitude, lon: pos.coords.longitude };
+    lastFixTime = Date.now();
+    setStatus('Located. Ready to generate a loop.');
+  }, err => {
+    clearTimeout(timeoutFallback);
+    setStatus('Location permission unavailable in this preview — search an address below instead.', true);
+  }, { enableHighAccuracy: true, timeout: 10000 });
+}
+locate();
+
+async function geocodeAddress(query){
+  const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(query)}`;
+  const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+  if(!res.ok) throw new Error('geocoding service error');
+  const data = await res.json();
+  if(!data.length) throw new Error('no match found');
+  return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon), label: data[0].display_name };
+}
+
+document.getElementById('findAddrBtn').addEventListener('click', async () => {
+  const q = document.getElementById('addressInput').value.trim();
+  if(!q) return;
+  setStatus('Searching for "'+q+'"…');
+  try{
+    const loc = await geocodeAddress(q);
+    userLoc = { lat: loc.lat, lon: loc.lon };
+    lastFixTime = Date.now();
+    setStatus('Start point set. Ready to generate a loop.');
+  }catch(e){
+    setStatus('Could not find that place — try a more specific address.', true);
+  }
+});
+
+// passive watch, to demonstrate the "alert if GPS unavailable while walking" behavior
+function startPassiveWatch(){
+  if(!navigator.geolocation) return;
+  gpsWatchId = navigator.geolocation.watchPosition(pos => {
+    lastFixTime = Date.now();
+    if(statusLine.classList.contains('warn')) setStatus('GPS signal recovered.');
+  }, err => {
+    setStatus('GPS signal lost — pace tracking paused until it returns.', true);
+  }, { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 });
+
+  setInterval(() => {
+    if(lastFixTime && Date.now() - lastFixTime > GPS_STALE_MS){
+      setStatus('GPS signal weak — this walk\'s data may be low-confidence.', true);
+    }
+  }, 5000);
+}
+
+// ---------- geometry helpers ----------
+const R = 6371000;
+function destPoint(lat, lon, bearingDeg, distM){
+  const brng = bearingDeg * Math.PI/180;
+  const lat1 = lat*Math.PI/180, lon1 = lon*Math.PI/180;
+  const lat2 = Math.asin(Math.sin(lat1)*Math.cos(distM/R) + Math.cos(lat1)*Math.sin(distM/R)*Math.cos(brng));
+  const lon2 = lon1 + Math.atan2(Math.sin(brng)*Math.sin(distM/R)*Math.cos(lat1), Math.cos(distM/R)-Math.sin(lat1)*Math.sin(lat2));
+  return { lat: lat2*180/Math.PI, lon: lon2*180/Math.PI };
+}
+
+async function osrmRoute(coords){
+  const coordStr = coords.map(c => `${c.lon},${c.lat}`).join(';');
+  const url = `https://router.project-osrm.org/route/v1/foot/${coordStr}?overview=full&geometries=geojson`;
+  const res = await fetch(url);
+  if(!res.ok) throw new Error('routing service error');
+  const data = await res.json();
+  if(!data.routes || !data.routes.length) throw new Error('no route found');
+  return data.routes[0];
+}
+
+function bearingBetween(a, b){
+  const lat1 = a.lat*Math.PI/180, lat2 = b.lat*Math.PI/180;
+  const dLon = (b.lon - a.lon)*Math.PI/180;
+  const y = Math.sin(dLon)*Math.cos(lat2);
+  const x = Math.cos(lat1)*Math.sin(lat2) - Math.sin(lat1)*Math.cos(lat2)*Math.cos(dLon);
+  return (Math.atan2(y, x)*180/Math.PI + 360) % 360;
+}
+
+function distanceMeters(lat1, lon1, lat2, lon2){
+  const dLat = (lat2-lat1)*Math.PI/180, dLon = (lon2-lon1)*Math.PI/180;
+  const la1 = lat1*Math.PI/180, la2 = lat2*Math.PI/180;
+  const h = Math.sin(dLat/2)**2 + Math.cos(la1)*Math.cos(la2)*Math.sin(dLon/2)**2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+
+function looksLikeBacktrack(routeCoords){
+  if(routeCoords.length < 8) return true;
+  const n = routeCoords.length;
+  const mid = Math.floor(n/2);
+  const firstHalf = routeCoords.slice(0, mid);
+  const secondHalf = routeCoords.slice(mid);
+
+  const maxSamples = 40;
+  const stepA = Math.max(1, Math.floor(firstHalf.length / maxSamples));
+  const stepB = Math.max(1, Math.floor(secondHalf.length / maxSamples));
+
+  let overlapCount = 0, sampled = 0;
+  for(let i=0; i<firstHalf.length; i+=stepA){
+    sampled++;
+    const [lon1, lat1] = firstHalf[i];
+    let minDist = Infinity;
+    for(let j=0; j<secondHalf.length; j+=stepB){
+      const [lon2, lat2] = secondHalf[j];
+      const d = distanceMeters(lat1, lon1, lat2, lon2);
+      if(d < minDist) minDist = d;
+    }
+    if(minDist < 20) overlapCount++;
+  }
+  const overlapFraction = sampled > 0 ? overlapCount / sampled : 1;
+  return overlapFraction > 0.45;
+}
+
+// ---------- loop generation ----------
+async function tryGenerateLoop(targetDistM){
+  let radius = (targetDistM / (2*Math.PI)) * 1.05;
+  const maxRounds = 6;
+  const bearingsPerRound = 4;
+  let best = null;
+  let bestDiff = Infinity;
+
+  for(let round=0; round<maxRounds; round++){
+    const baseBearing = Math.random()*360;
+    const roundRatios = [];
+
+    for(let i=0; i<bearingsPerRound; i++){
+      const spread = 25;
+      const b1 = (baseBearing + i*(360/bearingsPerRound) + (Math.random()*spread - spread/2)) % 360;
+      const b2 = (b1 + 120 + (Math.random()*spread - spread/2)) % 360;
+      const b3 = (b2 + 120 + (Math.random()*spread - spread/2)) % 360;
+
+      const p1 = destPoint(userLoc.lat, userLoc.lon, b1, radius);
+      const p2 = destPoint(userLoc.lat, userLoc.lon, b2, radius);
+      const p3 = destPoint(userLoc.lat, userLoc.lon, b3, radius);
+
+      try{
+        const route = await osrmRoute([userLoc, p1, p2, p3, userLoc]);
+        if(looksLikeBacktrack(route.geometry.coordinates)) continue;
+
+        roundRatios.push(route.distance / radius);
+
+        const diff = route.distance <= targetDistM
+          ? (targetDistM - route.distance)
+          : (route.distance - targetDistM) * 1.4;
+
+        if(diff < bestDiff){
+          bestDiff = diff;
+          best = route;
+        }
+        if(route.distance <= targetDistM * 1.15 && route.distance >= targetDistM * 0.5){
+          return route;
+        }
+      }catch(e){ /* try next attempt */ }
+    }
+
+    if(roundRatios.length){
+      const avgRatio = roundRatios.reduce((a,b) => a+b, 0) / roundRatios.length;
+      radius = targetDistM / avgRatio;
+    } else {
+      radius = radius * 0.7;
+    }
+  }
+  return best;
+}
+
+async function generateOutAndBack(targetDistM){
+  const bearing = Math.random()*360;
+  const halfDist = targetDistM/2 * 1.05;
+  const turnPoint = destPoint(userLoc.lat, userLoc.lon, bearing, halfDist);
+  const route = await osrmRoute([userLoc, turnPoint]);
+  const outCoords = route.geometry.coordinates;
+  const perpBearing = (bearing + 90) % 360;
+  const returnCoords = outCoords.slice(0,-1).reverse().map(c => {
+    const p = destPoint(c[1], c[0], perpBearing, 6);
+    return [p.lon, p.lat];
+  });
+  return {
+    distance: route.distance * 2,
+    duration: route.duration * 2,
+    geometry: {
+      type: 'LineString',
+      coordinates: outCoords.concat(returnCoords)
+    }
+  };
+}
+
+function drawRoute(route, isLoop){
+  if(!map){
+    map = L.map('map', { zoomControl: true }).setView([userLoc.lat, userLoc.lon], 15);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors',
+      maxZoom: 19
+    }).addTo(map);
+  }
+  if(routeLayer) map.removeLayer(routeLayer);
+  if(markerLayer) markerLayer.forEach(m => map.removeLayer(m));
+  markerLayer = [];
+
+  const latlngs = route.geometry.coordinates.map(c => [c[1], c[0]]);
+  routeLayer = L.polyline(latlngs, {
+    color: isLoop ? '#3E6B63' : '#C1521F',
+    weight: 4,
+    opacity: 0.85,
+    dashArray: isLoop ? null : '8 6'
+  }).addTo(map);
+
+  const startIcon = L.divIcon({
+    className: '',
+    html: '<div style="width:14px;height:14px;border-radius:50%;background:#C1521F;border:2px solid #EDE6D6;box-shadow:0 0 0 1px #2E3B2F;"></div>',
+    iconSize:[14,14], iconAnchor:[7,7]
+  });
+  markerLayer.push(L.marker([userLoc.lat, userLoc.lon], {icon:startIcon}).addTo(map));
+
+  map.fitBounds(routeLayer.getBounds(), { padding: [24,24] });
+}
+
+function fmtDist(m){
+  if(unit === 'mi'){
+    const miles = (m/1000) * MI_PER_KM;
+    return miles.toFixed(2)+' mi';
+  }
+  return m >= 1000 ? (m/1000).toFixed(2)+' km' : Math.round(m)+' m';
+}
+function fmtDuration(sec){
+  const min = Math.round(sec/60);
+  return min+' min';
+}
+
+async function handleGenerate(){
+  if(!userLoc){
+    setStatus('Still waiting on your location — try again in a moment.', true);
+    locate();
+    return;
+  }
+  generateBtn.disabled = true;
+  setStatus('Generating loop options…');
+
+  let targetDistM;
+  if(mode === 'distance'){
+    const val = +rangeInput.value;
+    targetDistM = unit === 'mi' ? (val / MI_PER_KM) * 1000 : val * 1000;
+  } else {
+    const minutes = +rangeInput.value;
+    targetDistM = (minutes / paceMinPerKm) * 1000;
+  }
+
+  let route = await tryGenerateLoop(targetDistM);
+  let isLoop = true;
+  if(!route){
+    setStatus('No clean loop nearby — falling back to out-and-back.');
+    try{
+      route = await generateOutAndBack(targetDistM);
+      isLoop = false;
+    }catch(e){
+      setStatus('Routing service unavailable right now. Try again shortly.', true);
+      generateBtn.disabled = false;
+      return;
+    }
+  } else {
+    const diffPct = Math.abs(route.distance - targetDistM) / targetDistM;
+    if(diffPct > 0.15){
+      setStatus('Closest loop nearby — a bit ' + (route.distance < targetDistM ? 'shorter' : 'longer') + ' than requested.');
+    } else {
+      setStatus('Loop generated.');
+    }
+  }
+
+  document.getElementById('resultCard').classList.remove('hidden');
+  document.getElementById('badgeLoop').classList.toggle('hidden', !isLoop);
+  document.getElementById('badgeOutback').classList.toggle('hidden', isLoop);
+  drawRoute(route, isLoop);
+
+  const estMinutes = route.distance/1000 * paceMinPerKm;
+  document.getElementById('statDist').textContent = fmtDist(route.distance);
+  document.getElementById('statTime').textContent = Math.round(estMinutes)+' min';
+  const paceDisplay = unit === 'mi' ? (paceMinPerKm / MI_PER_KM) : paceMinPerKm;
+  document.getElementById('statPace').textContent = paceDisplay.toFixed(1)+' min/'+unit+' (default)';
+
+  generateBtn.disabled = false;
+  if(!gpsWatchId) startPassiveWatch();
+}
+
+generateBtn.addEventListener('click', handleGenerate);
+</script>
+</body>
+</html>
