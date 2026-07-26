@@ -230,12 +230,12 @@
 
 <script>
 // ---------- state ----------
-let mode = 'time'; // 'time' | 'distance'
-let unit = 'mi'; // 'mi' | 'km'
+let mode = 'time';
+let unit = 'mi';
 const MI_PER_KM = 0.621371;
 let userLoc = null;
 let map = null, routeLayer = null, markerLayer = null;
-let paceMinPerKm = 12; // default walking pace assumption (~5 km/h), will personalize after real walks are logged
+let paceMinPerKm = 12;
 let gpsWatchId = null;
 let lastFixTime = null;
 const GPS_STALE_MS = 20000;
@@ -303,7 +303,6 @@ on('unitKm', 'click', function(){
   document.getElementById('unitMi').classList.remove('active');
   refreshDialLabels();
 });
-
 on('modeTime', 'click', function(){
   mode = 'time';
   document.getElementById('modeTime').classList.add('active');
@@ -330,7 +329,7 @@ function locate(){
   }
   setStatus('Locating you…');
   const timeoutFallback = setTimeout(() => {
-    if(!userLoc) setStatus('Location permission unavailable in this preview — search an address below instead.', true);
+    if(!userLoc) setStatus('Location permission unavailable — search an address below instead.', true);
   }, 6000);
   navigator.geolocation.getCurrentPosition(pos => {
     clearTimeout(timeoutFallback);
@@ -339,7 +338,7 @@ function locate(){
     setStatus('Located. Ready to generate a loop.');
   }, err => {
     clearTimeout(timeoutFallback);
-    setStatus('Location permission unavailable in this preview — search an address below instead.', true);
+    setStatus('Location permission unavailable — search an address below instead.', true);
   }, { enableHighAccuracy: true, timeout: 10000 });
 }
 locate();
@@ -367,7 +366,6 @@ document.getElementById('findAddrBtn').addEventListener('click', async () => {
   }
 });
 
-// passive watch, to demonstrate the "alert if GPS unavailable while walking" behavior
 function startPassiveWatch(){
   if(!navigator.geolocation) return;
   gpsWatchId = navigator.geolocation.watchPosition(pos => {
@@ -404,14 +402,6 @@ async function osrmRoute(coords){
   return data.routes[0];
 }
 
-function bearingBetween(a, b){
-  const lat1 = a.lat*Math.PI/180, lat2 = b.lat*Math.PI/180;
-  const dLon = (b.lon - a.lon)*Math.PI/180;
-  const y = Math.sin(dLon)*Math.cos(lat2);
-  const x = Math.cos(lat1)*Math.sin(lat2) - Math.sin(lat1)*Math.cos(lat2)*Math.cos(dLon);
-  return (Math.atan2(y, x)*180/Math.PI + 360) % 360;
-}
-
 function distanceMeters(lat1, lon1, lat2, lon2){
   const dLat = (lat2-lat1)*Math.PI/180, dLon = (lon2-lon1)*Math.PI/180;
   const la1 = lat1*Math.PI/180, la2 = lat2*Math.PI/180;
@@ -420,7 +410,7 @@ function distanceMeters(lat1, lon1, lat2, lon2){
 }
 
 function looksLikeBacktrack(routeCoords){
-  if(routeCoords.length < 8) return true;
+  if(routeCoords.length < 4) return true;
   const n = routeCoords.length;
   const mid = Math.floor(n/2);
   const firstHalf = routeCoords.slice(0, mid);
@@ -453,11 +443,13 @@ async function tryGenerateLoop(targetDistM){
   const bearingsPerRound = 4;
   let best = null;
   let bestDiff = Infinity;
+  let routingFailures = 0;
 
   for(let round=0; round<maxRounds; round++){
     const baseBearing = Math.random()*360;
     const roundRatios = [];
 
+    const attempts = [];
     for(let i=0; i<bearingsPerRound; i++){
       const spread = 25;
       const b1 = (baseBearing + i*(360/bearingsPerRound) + (Math.random()*spread - spread/2)) % 360;
@@ -467,35 +459,43 @@ async function tryGenerateLoop(targetDistM){
       const p1 = destPoint(userLoc.lat, userLoc.lon, b1, radius);
       const p2 = destPoint(userLoc.lat, userLoc.lon, b2, radius);
       const p3 = destPoint(userLoc.lat, userLoc.lon, b3, radius);
+      attempts.push(osrmRoute([userLoc, p1, p2, p3, userLoc]));
+    }
 
-      try{
-        const route = await osrmRoute([userLoc, p1, p2, p3, userLoc]);
-        if(looksLikeBacktrack(route.geometry.coordinates)) continue;
+    const settled = await Promise.allSettled(attempts);
+    for(const outcome of settled){
+      if(outcome.status === 'rejected'){
+        routingFailures++;
+        continue;
+      }
+      const route = outcome.value;
+      if(looksLikeBacktrack(route.geometry.coordinates)) continue;
 
-        roundRatios.push(route.distance / radius);
+      roundRatios.push(route.distance / radius);
 
-        const diff = route.distance <= targetDistM
-          ? (targetDistM - route.distance)
-          : (route.distance - targetDistM) * 1.4;
+      const diff = route.distance <= targetDistM
+        ? (targetDistM - route.distance)
+        : (route.distance - targetDistM) * 1.4;
 
-        if(diff < bestDiff){
-          bestDiff = diff;
-          best = route;
-        }
-        if(route.distance <= targetDistM * 1.15 && route.distance >= targetDistM * 0.5){
-          return route;
-        }
-      }catch(e){ /* try next attempt */ }
+      if(diff < bestDiff){
+        bestDiff = diff;
+        best = route;
+      }
+      if(route.distance <= targetDistM * 1.15 && route.distance >= targetDistM * 0.5){
+        return { route: route, failures: routingFailures };
+      }
     }
 
     if(roundRatios.length){
       const avgRatio = roundRatios.reduce((a,b) => a+b, 0) / roundRatios.length;
-      radius = targetDistM / avgRatio;
+      const proposed = targetDistM / avgRatio;
+      const minR = radius * 0.4, maxR = radius * 1.6;
+      radius = Math.max(minR, Math.min(maxR, proposed));
     } else {
       radius = radius * 0.7;
     }
   }
-  return best;
+  return { route: best, failures: routingFailures };
 }
 
 async function generateOutAndBack(targetDistM){
@@ -556,10 +556,6 @@ function fmtDist(m){
   }
   return m >= 1000 ? (m/1000).toFixed(2)+' km' : Math.round(m)+' m';
 }
-function fmtDuration(sec){
-  const min = Math.round(sec/60);
-  return min+' min';
-}
 
 async function handleGenerate(){
   if(!userLoc){
@@ -579,10 +575,16 @@ async function handleGenerate(){
     targetDistM = (minutes / paceMinPerKm) * 1000;
   }
 
-  let route = await tryGenerateLoop(targetDistM);
+  const loopResult = await tryGenerateLoop(targetDistM);
+  let route = loopResult.route;
+  const failures = loopResult.failures;
   let isLoop = true;
   if(!route){
-    setStatus('No clean loop nearby — falling back to out-and-back.');
+    if(failures > 0){
+      setStatus('Routing service dropped ' + failures + ' request(s) — using out-and-back.', true);
+    } else {
+      setStatus('No clean loop nearby — falling back to out-and-back.');
+    }
     try{
       route = await generateOutAndBack(targetDistM);
       isLoop = false;
