@@ -185,6 +185,10 @@
       <button id="modeTime" class="active">By time</button>
       <button id="modeDist">By distance</button>
     </div>
+    <div class="mode-toggle" id="unitToggleRow" style="max-width:140px; margin: 0 auto 14px;">
+      <button id="unitMi" class="active">mi</button>
+      <button id="unitKm">km</button>
+    </div>
 
     <div class="dial-zone">
       <div class="dial" id="dialRing">
@@ -227,6 +231,8 @@
 <script>
 // ---------- state ----------
 let mode = 'time'; // 'time' | 'distance'
+let unit = 'mi'; // 'mi' | 'km'
+const MI_PER_KM = 0.621371;
 let userLoc = null;
 let map = null, routeLayer = null, markerLayer = null;
 let paceMinPerKm = 12; // default walking pace assumption (~5 km/h), will personalize after real walks are logged
@@ -257,271 +263,14 @@ function updateDialRing(){
 }
 
 function refreshDialLabels(){
+  document.getElementById('unitToggleRow').classList.toggle('hidden', mode !== 'distance');
   if(mode === 'time'){
     rangeInput.min = 5; rangeInput.max = 60; rangeInput.step = 5;
     if(+rangeInput.value < 5 || +rangeInput.value > 60) rangeInput.value = 15;
     dialUnit.textContent = 'minutes';
     rangeMin.textContent = '5 min'; rangeMax.textContent = '60 min';
-  } else {
-    rangeInput.min = 0.5; rangeInput.max = 8; rangeInput.step = 0.5;
-    if(+rangeInput.value > 8) rangeInput.value = 2;
-    dialUnit.textContent = 'km';
-    rangeMin.textContent = '0.5 km'; rangeMax.textContent = '8 km';
-  }
-  dialValue.textContent = rangeInput.value;
-  updateDialRing();
-}
-
-document.getElementById('modeTime').addEventListener('click', () => {
-  mode = 'time';
-  document.getElementById('modeTime').classList.add('active');
-  document.getElementById('modeDist').classList.remove('active');
-  refreshDialLabels();
-});
-document.getElementById('modeDist').addEventListener('click', () => {
-  mode = 'distance';
-  document.getElementById('modeDist').classList.add('active');
-  document.getElementById('modeTime').classList.remove('active');
-  refreshDialLabels();
-});
-rangeInput.addEventListener('input', () => {
-  dialValue.textContent = rangeInput.value;
-  updateDialRing();
-});
-refreshDialLabels();
-
-// ---------- geolocation ----------
-function locate(){
-  if(!navigator.geolocation){
-    setStatus('Geolocation not supported by this browser.', true);
-    return;
-  }
-  setStatus('Locating you…');
-  const timeoutFallback = setTimeout(() => {
-    if(!userLoc) setStatus('Location permission unavailable in this preview — search an address below instead.', true);
-  }, 6000);
-  navigator.geolocation.getCurrentPosition(pos => {
-    clearTimeout(timeoutFallback);
-    userLoc = { lat: pos.coords.latitude, lon: pos.coords.longitude };
-    lastFixTime = Date.now();
-    setStatus('Located. Ready to generate a loop.');
-  }, err => {
-    clearTimeout(timeoutFallback);
-    setStatus('Location permission unavailable in this preview — search an address below instead.', true);
-  }, { enableHighAccuracy: true, timeout: 10000 });
-}
-locate();
-
-async function geocodeAddress(query){
-  const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(query)}`;
-  const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
-  if(!res.ok) throw new Error('geocoding service error');
-  const data = await res.json();
-  if(!data.length) throw new Error('no match found');
-  return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon), label: data[0].display_name };
-}
-
-document.getElementById('findAddrBtn').addEventListener('click', async () => {
-  const q = document.getElementById('addressInput').value.trim();
-  if(!q) return;
-  setStatus('Searching for "'+q+'"…');
-  try{
-    const loc = await geocodeAddress(q);
-    userLoc = { lat: loc.lat, lon: loc.lon };
-    lastFixTime = Date.now();
-    setStatus('Start point set. Ready to generate a loop.');
-  }catch(e){
-    setStatus('Could not find that place — try a more specific address.', true);
-  }
-});
-
-// passive watch, to demonstrate the "alert if GPS unavailable while walking" behavior
-function startPassiveWatch(){
-  if(!navigator.geolocation) return;
-  gpsWatchId = navigator.geolocation.watchPosition(pos => {
-    lastFixTime = Date.now();
-    if(statusLine.classList.contains('warn')) setStatus('GPS signal recovered.');
-  }, err => {
-    setStatus('GPS signal lost — pace tracking paused until it returns.', true);
-  }, { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 });
-
-  setInterval(() => {
-    if(lastFixTime && Date.now() - lastFixTime > GPS_STALE_MS){
-      setStatus('GPS signal weak — this walk\'s data may be low-confidence.', true);
-    }
-  }, 5000);
-}
-
-// ---------- geometry helpers ----------
-const R = 6371000;
-function destPoint(lat, lon, bearingDeg, distM){
-  const brng = bearingDeg * Math.PI/180;
-  const lat1 = lat*Math.PI/180, lon1 = lon*Math.PI/180;
-  const lat2 = Math.asin(Math.sin(lat1)*Math.cos(distM/R) + Math.cos(lat1)*Math.sin(distM/R)*Math.cos(brng));
-  const lon2 = lon1 + Math.atan2(Math.sin(brng)*Math.sin(distM/R)*Math.cos(lat1), Math.cos(distM/R)-Math.sin(lat1)*Math.sin(lat2));
-  return { lat: lat2*180/Math.PI, lon: lon2*180/Math.PI };
-}
-
-async function osrmRoute(coords){
-  // coords: array of {lat, lon}
-  const coordStr = coords.map(c => `${c.lon},${c.lat}`).join(';');
-  const url = `https://router.project-osrm.org/route/v1/foot/${coordStr}?overview=full&geometries=geojson`;
-  const res = await fetch(url);
-  if(!res.ok) throw new Error('routing service error');
-  const data = await res.json();
-  if(!data.routes || !data.routes.length) throw new Error('no route found');
-  return data.routes[0]; // { distance (m), duration (s), geometry }
-}
-
-function bearingBetween(a, b){
-  const lat1 = a.lat*Math.PI/180, lat2 = b.lat*Math.PI/180;
-  const dLon = (b.lon - a.lon)*Math.PI/180;
-  const y = Math.sin(dLon)*Math.cos(lat2);
-  const x = Math.cos(lat1)*Math.sin(lat2) - Math.sin(lat1)*Math.cos(lat2)*Math.cos(dLon);
-  return (Math.atan2(y, x)*180/Math.PI + 360) % 360;
-}
-
-// crude "is this basically a there-and-back" check: compare outbound vs inbound heading at start/end of route line
-function looksLikeBacktrack(routeCoords){
-  if(routeCoords.length < 6) return true;
-  const n = routeCoords.length;
-  const startSeg = [routeCoords[0], routeCoords[Math.min(4,n-1)]];
-  const endSeg = [routeCoords[n-Math.min(5,n)], routeCoords[n-1]];
-  const bOut = bearingBetween({lat:startSeg[0][1],lon:startSeg[0][0]}, {lat:startSeg[1][1],lon:startSeg[1][0]});
-  const bIn = bearingBetween({lat:endSeg[0][1],lon:endSeg[0][0]}, {lat:endSeg[1][1],lon:endSeg[1][0]});
-  const diff = Math.abs(((bOut - bIn + 540) % 360) - 180); // how close to a straight reversal (180 deg apart from bOut)
-  return diff < 25; // nearly opposite headings both ends => likely a there-and-back shape
-}
-
-// ---------- loop generation ----------
-async function tryGenerateLoop(targetDistM){
-  const attempts = 5;
-  const baseBearing = Math.random()*360;
-  for(let i=0; i<attempts; i++){
-    // spread 3 waypoints roughly around a circle whose circumference ~= targetDistM
-    const radius = targetDistM / (2*Math.PI) * 1.05;
-    const spread = 25; // degrees of jitter
-    const b1 = (baseBearing + i*35 + (Math.random()*spread - spread/2)) % 360;
-    const b2 = (b1 + 120 + (Math.random()*spread - spread/2)) % 360;
-    const b3 = (b2 + 120 + (Math.random()*spread - spread/2)) % 360;
-
-    const p1 = destPoint(userLoc.lat, userLoc.lon, b1, radius);
-    const p2 = destPoint(userLoc.lat, userLoc.lon, b2, radius);
-    const p3 = destPoint(userLoc.lat, userLoc.lon, b3, radius);
-
-    try{
-      const route = await osrmRoute([userLoc, p1, p2, p3, userLoc]);
-      const ratio = route.distance / targetDistM;
-      if(ratio > 0.7 && ratio < 1.6 && !looksLikeBacktrack(route.geometry.coordinates)){
-        return route;
-      }
-    }catch(e){ /* try next attempt */ }
-  }
-  return null;
-}
-
-async function generateOutAndBack(targetDistM){
-  const bearing = Math.random()*360;
-  const halfDist = targetDistM/2 * 1.05;
-  const turnPoint = destPoint(userLoc.lat, userLoc.lon, bearing, halfDist);
-  const route = await osrmRoute([userLoc, turnPoint]);
-  // double it to represent the return leg
-  return {
-    distance: route.distance * 2,
-    duration: route.duration * 2,
-    geometry: {
-      type: 'LineString',
-      coordinates: route.geometry.coordinates.concat(route.geometry.coordinates.slice(0,-1).reverse())
-    }
-  };
-}
-
-function drawRoute(route, isLoop){
-  if(!map){
-    map = L.map('map', { zoomControl: true }).setView([userLoc.lat, userLoc.lon], 15);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors',
-      maxZoom: 19
-    }).addTo(map);
-  }
-  if(routeLayer) map.removeLayer(routeLayer);
-  if(markerLayer) markerLayer.forEach(m => map.removeLayer(m));
-  markerLayer = [];
-
-  const latlngs = route.geometry.coordinates.map(c => [c[1], c[0]]);
-  routeLayer = L.polyline(latlngs, {
-    color: isLoop ? '#3E6B63' : '#C1521F',
-    weight: 4,
-    opacity: 0.85,
-    dashArray: isLoop ? null : '8 6'
-  }).addTo(map);
-
-  const startIcon = L.divIcon({
-    className: '',
-    html: '<div style="width:14px;height:14px;border-radius:50%;background:#C1521F;border:2px solid #EDE6D6;box-shadow:0 0 0 1px #2E3B2F;"></div>',
-    iconSize:[14,14], iconAnchor:[7,7]
-  });
-  markerLayer.push(L.marker([userLoc.lat, userLoc.lon], {icon:startIcon}).addTo(map));
-
-  map.fitBounds(routeLayer.getBounds(), { padding: [24,24] });
-}
-
-function fmtDist(m){
-  return m >= 1000 ? (m/1000).toFixed(2)+' km' : Math.round(m)+' m';
-}
-function fmtDuration(sec){
-  const min = Math.round(sec/60);
-  return min+' min';
-}
-
-async function handleGenerate(){
-  if(!userLoc){
-    setStatus('Still waiting on your location — try again in a moment.', true);
-    locate();
-    return;
-  }
-  generateBtn.disabled = true;
-  setStatus('Generating loop options…');
-
-  let targetDistM;
-  if(mode === 'distance'){
-    targetDistM = (+rangeInput.value) * 1000;
-  } else {
-    const minutes = +rangeInput.value;
-    targetDistM = (minutes / paceMinPerKm) * 1000;
-  }
-
-  let route = await tryGenerateLoop(targetDistM);
-  let isLoop = true;
-  if(!route){
-    setStatus('No clean loop nearby — falling back to out-and-back.');
-    try{
-      route = await generateOutAndBack(targetDistM);
-      isLoop = false;
-    }catch(e){
-      setStatus('Routing service unavailable right now. Try again shortly.', true);
-      generateBtn.disabled = false;
-      return;
-    }
-  } else {
-    setStatus('Loop generated.');
-  }
-
-  document.getElementById('resultCard').classList.remove('hidden');
-  document.getElementById('badgeLoop').classList.toggle('hidden', !isLoop);
-  document.getElementById('badgeOutback').classList.toggle('hidden', isLoop);
-  drawRoute(route, isLoop);
-
-  const estMinutes = route.distance/1000 * paceMinPerKm;
-  document.getElementById('statDist').textContent = fmtDist(route.distance);
-  document.getElementById('statTime').textContent = Math.round(estMinutes)+' min';
-  document.getElementById('statPace').textContent = paceMinPerKm.toFixed(1)+' min/km (default)';
-
-  generateBtn.disabled = false;
-  if(!gpsWatchId) startPassiveWatch();
-}
-
-generateBtn.addEventListener('click', handleGenerate);
-</script>
-</body>
-</html>
+  } else if(unit === 'mi'){
+    rangeInput.min = 0.25; rangeInput.max = 5; rangeInput.step = 0.25;
+    if(+rangeInput.value > 5) rangeInput.value = 1;
+    dialUnit.textContent = 'miles';
+    rangeMin.textConte
